@@ -1,0 +1,4 @@
+baseURL = "http://juniper-dusk.github.io/"
+languageCode = "en-us"
+title = "Game Development"
+theme = "ananke"
