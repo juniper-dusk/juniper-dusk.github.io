@@ -10,7 +10,7 @@ omit_header_text: true
 
 I have over two years of experience in professional C++ software development, with a Bachelor's Degree in Computer Science.
 
-I'm actively looking for a gameplay programmer position. Here are some of my [current portfolio projects](../games/).
+I am actively looking for a gameplay programmer position. Here are some of my [current portfolio projects](../games/).
 
 In my free time, I make pixel art, play jazz piano, and go birding.
 
