@@ -4,7 +4,6 @@ date: 2021-07-23T11:13:34-04:00
 draft: false
 type: "page"
 menu: "main"
-featured_image: '/images/porco-rosso.png'
 omit_header_text: true
 ---
 

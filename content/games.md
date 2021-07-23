@@ -3,7 +3,7 @@ title: "Games"
 date: 2021-07-23T00:58:08-04:00
 draft: false
 menu: "main"
-featured_image: '/images/porco-rosso.png'
+omit_header_text: true
 ---
 
 [![Laserpunk Logo](/images/laserpunk-cover.png)](https://juniper-dusk.itch.io/laserpunk-demo)
