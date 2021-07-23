@@ -9,13 +9,13 @@ featured_image: '/images/porco-rosso.png'
 # Pixel Art
 
 #### Priss, Bubblegum Crisis
-![Priss, Bubblegum Crisis](/gallery/priss-color.png/)
+![Priss, Bubblegum Crisis](/gallery/priss-color.png)
 
 #### Porco Rosso
-![Porco Rosso](/images/porco-rosso.png/)
+![Porco Rosso](/images/porco-rosso.png)
 
 #### Totoro
-![Totoro](/gallery/totoro.png/)
+![Totoro](/gallery/totoro.png)
 
 #### Shiba Inu
-![Shiba Inu](/gallery/shiba-inu.png/)
+![Shiba Inu](/gallery/shiba-inu.png)
