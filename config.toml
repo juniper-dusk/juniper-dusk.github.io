@@ -1,4 +1,18 @@
 baseURL = "http://juniper-dusk.github.io/"
 languageCode = "en-us"
-title = "Game Development"
+title = "JUNIPER DUSK"
 theme = "ananke"
+Paginate = 3
+
+[params]
+    site_logo = "/images/juniper-logo.png"
+    favicon = "/images/favicon.png"
+    recent_posts_number = 2
+    google_fonts = [
+        ["Fira Code", "400, 700"],
+        ["IBM Plex Sans", "400, 400i, 700, 700i"]
+    ]
+    custom_css = [ 'custom.css' ]
+    body_classes = "sans-serif"
+    post_content_classes = "sans-serif"
+    twitter = "https://twitter.com/juniper_dusk"

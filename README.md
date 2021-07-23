@@ -1,2 +1,2 @@
 # juniper-dusk.github.io
-Game development portfolio.
+Game developer portfolio website.
