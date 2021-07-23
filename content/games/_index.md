@@ -6,8 +6,6 @@ menu: "main"
 featured_image: '/images/porco-rosso.png'
 ---
 
-## Laserpunk
 [![Laserpunk Logo](/images/laserpunk-cover.png)](https://juniper-dusk.itch.io/laserpunk-demo)
 
-## Courier Connect
 [![Courier Connect Logo](/images/courier-connect.png)](https://coffeebreakgamestudio.itch.io/courier-connect)
