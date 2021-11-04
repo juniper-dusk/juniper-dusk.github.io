@@ -1,0 +1,326 @@
+<!doctype html><html lang=en dir=auto>
+<head><meta charset=utf-8>
+<meta http-equiv=x-ua-compatible content="IE=edge">
+<meta name=viewport content="width=device-width,initial-scale=1,shrink-to-fit=no">
+<meta name=robots content="index, follow">
+<title>Making a modular crafting system in Godot | juniper dusk</title>
+<meta name=keywords content="Craftpunk,devlog">
+<meta name=description content="Craftpunk devlog: extending Godot resources to create a modular crafting system.">
+<meta name=author content="Juniper">
+<link rel=canonical href=http://juniper-dusk.github.io/posts/craftpunk-devlog/>
+<link crossorigin=anonymous href=/assets/css/stylesheet.min.6f60056d44d3f7eb69a4bc6c332b59960f3a995802bded244750232f33713c49.css integrity="sha256-b2AFbUTT9+tppLxsMytZlg86mVgCve0kR1AjLzNxPEk=" rel="preload stylesheet" as=style>
+<script defer crossorigin=anonymous src=/assets/js/highlight.min.7680afc38aa6b15ddf158a4f3780b7b1f7dde7e91d26f073e6229bb7a0793c92.js integrity="sha256-doCvw4qmsV3fFYpPN4C3sffd5+kdJvBz5iKbt6B5PJI=" onload=hljs.initHighlightingOnLoad()></script>
+<link rel=icon href=http://juniper-dusk.github.io/favicon.ico>
+<link rel=icon type=image/png sizes=16x16 href=http://juniper-dusk.github.io/favicon-16x16.png>
+<link rel=icon type=image/png sizes=32x32 href=http://juniper-dusk.github.io/favicon-32x32.png>
+<link rel=apple-touch-icon href=http://juniper-dusk.github.io/apple-touch-icon.png>
+<link rel=mask-icon href=http://juniper-dusk.github.io/safari-pinned-tab.svg>
+<meta name=theme-color content="#2e2e33">
+<meta name=msapplication-TileColor content="#2e2e33">
+<meta name=generator content="Hugo 0.89.0">
+<noscript>
+<style>#theme-toggle,.top-link{display:none}</style>
+<style>@media(prefers-color-scheme:dark){:root{--theme:rgb(29, 30, 32);--entry:rgb(46, 46, 51);--primary:rgb(218, 218, 219);--secondary:rgb(155, 156, 157);--tertiary:rgb(65, 66, 68);--content:rgb(196, 196, 197);--hljs-bg:rgb(46, 46, 51);--code-bg:rgb(55, 56, 62);--border:rgb(51, 51, 51)}.list{background:var(--theme)}.list:not(.dark)::-webkit-scrollbar-track{background:0 0}.list:not(.dark)::-webkit-scrollbar-thumb{border-color:var(--theme)}}</style>
+</noscript><meta property="og:title" content="Making a modular crafting system in Godot">
+<meta property="og:description" content="Craftpunk devlog: extending Godot resources to create a modular crafting system.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="http://juniper-dusk.github.io/posts/craftpunk-devlog/"><meta property="article:section" content="posts">
+<meta property="article:published_time" content="2021-11-03T21:13:13-04:00">
+<meta property="article:modified_time" content="2021-11-03T21:13:13-04:00">
+<meta name=twitter:card content="summary">
+<meta name=twitter:title content="Making a modular crafting system in Godot">
+<meta name=twitter:description content="Craftpunk devlog: extending Godot resources to create a modular crafting system.">
+<script type=application/ld+json>{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Posts","item":"http://juniper-dusk.github.io/posts/"},{"@type":"ListItem","position":2,"name":"Making a modular crafting system in Godot","item":"http://juniper-dusk.github.io/posts/craftpunk-devlog/"}]}</script>
+<script type=application/ld+json>{"@context":"https://schema.org","@type":"BlogPosting","headline":"Making a modular crafting system in Godot","name":"Making a modular crafting system in Godot","description":"Craftpunk devlog: extending Godot resources to create a modular crafting system.","keywords":["Craftpunk","devlog"],"articleBody":"Godot Resources Godot’s Resource class is a serializable data container that can be extended. They are quite similar in usage to Unity’s ScriptableObject class. The following are some use cases and strengths of using Resources in your game project.\n Resources expose properties to the editor. This allows game designers to create new objects of the new Resource type in the editor. Resources are serializable, so they can be easily saved and loaded from disk. Resources are more light-weight than Nodes, and help streamline the SceneTree.  These all play a role in keeping the delineations of the various game systems well-defined.\n Pure data such as player stats are stored and manipulated in Resources. Nodes (e.g. actors, UI) can fetch data and perform abstract operations on the Resource.  Crafting It is fairly trivial to apply Resources to an inventory system where items are static data objects: one inventory item maps to one base class that derives from Resource. For Craftpunk, I followed the Resource Based Inventory tutorial by Heartbeast. I have yet to go back and refactor this system, but I will make a note of where improvements can be made.\nBase Class # craft_component.gd class_name CraftComponent extends Resource export(Texture) var thumbnail export(String) var name export(int) var amount = 1 export(bool) var stackable = true func get_description() - String: return \"Raw material\" From there, you can start to create whatever raw materials (e.g. iron ore, copper ore) by creating a new CraftComponent in the editor and filling out the properties.\nCrafting Recipes # craft_recipe.gd class_name CraftRecipe extends CraftComponent export(Array, Resource) var components var _initialized : bool func get_description() - String: return \"Compound material\" static func get_material_amounts(list : Array) - Dictionary: # Generate name/amount dictionary. var result = {} for material in list: if not material.name in result: result[material.name] = material.amount else: result[material.name] += material.amount return result Overall, a recipe is fairly simple: it is a list of items. Because CraftRecipe inherits from the base item class, recipes can compose other recipes and be stored in the inventory.\nI opted for a simpler approach on the front-end, where the designer simply adds duplicate Resources to represent more of that object. I find the exported Dictionary interface to be a bit finicky compared to exported Arrays, because it lacks type hinting; hopefully this changes in a future update.\nThis does have the drawback of some added complexity on the backend: we need to iterate over the list and generate a dictionary with unique items as keys, and amounts as values. NOTE: Ideally, you would store this data in the CraftRecipe upon initialization, so that accessors do not need to know of this function.\nRecipe Database # recipe_database.gd class_name RecipeDatabase extends Resource export(Array, Resource) var recipe_list : Array var recipe_database : Dictionary func initialize() - void: # Construct recipe database. recipe_database = {} for recipe in recipe_list: recipe_database[recipe.name] = CraftRecipe.get_material_amounts(recipe.components) # Param: materials is a dictionary with component name/amount as key/value. func get_recipe(materials : Dictionary) - CraftComponent: for recipe_name in recipe_database.keys(): var recipe_amounts = recipe_database[recipe_name] if materials_match_recipe(recipe_amounts, materials): return get_component_by_name(recipe_name) return null func materials_match_recipe(recipe : Dictionary, materials : Dictionary) - bool: # Don't attempt to read from an empty materials list. if not materials.keys(): return false for name in recipe.keys(): if not name in materials: return false elif materials[name] CraftComponent: for recipe in recipe_list: if recipe.name == name: return recipe return null Once you create a number of recipes, you need to query a collection of them in order to match a “pool” of items to an existing recipe. In a larger-scale project, this could be a NoSQL database which would allow for storage of many items and allow for server-side replication. However, for time’s sake I went with a relatively simple Dictionary wrapper.\nOne benefit of storing the list in this way is that recipes can be “learned” by the player as the game progresses, and this can be serialized and saved to disk.\nThe main complication here is that items need to be fetched by the unique name field, whereas in memory they are stored as Resources which do not have a extendable hash function. This means we lose the instant access from the hash table and have to iterate over the keys linearly like an Array. I kept it this way to eventually split it out into C++ and override the hash operator. NOTE: You could store a separate name - Resource mapping alongside the name - materials mapping.\nInventory Craft Pool # craft_pool.gd class_name CraftPool extends ItemPool export(Resource) var recipe_database func initialize(): recipe_database.initialize() func get_item() - CraftComponent: # Tally up number of materials by name. var material_amounts = CraftRecipe.get_material_amounts(materials) # Verify with database if item can be crafted. return recipe_database.get_recipe(material_amounts) # Sets materials to the leftover materials. func craft_item() - bool: # Make sure we have an item to begin with. var crafted_item = get_item() if not crafted_item: return false crafted_item = crafted_item.duplicate() var remaining_amounts = CraftRecipe.get_material_amounts(materials) var count = 0 var item = crafted_item.duplicate() var item_amounts = CraftRecipe.get_material_amounts(item.components) # While we have an item, keep subtracting required resources. while(item): if subtract_amounts(remaining_amounts, item_amounts): # Enough materials left, add one to count. count += 1 item = recipe_database.get_recipe(remaining_amounts) else: item = null # Reset materials to clear pool. reset() # Add leftover materials from crafting. for name in remaining_amounts.keys(): var new_item = recipe_database.get_component_by_name(name).duplicate() new_item.amount = remaining_amounts[name] add_material(new_item) # Add the count to the crafted item and append it to list. if crafted_item.stackable: crafted_item.amount = count add_material(crafted_item) else: for _i in range(count): add_material(crafted_item) return true Now that we have our crafting system essentially complete, we just need a way to bridge the gap between our inventory and the crafting system. I chose to keep the two systems fairly encapsulated from each other and copy items to the CraftPool when the craft button is pressed. You could extend the actual Inventory resource from the HeartBeast tutorial to avoid copying, but that class is complex enough as is in my opinion.\nThis class is essentially responsible for processing “batches” of recipes. It verifies the ingredients are present, crafts the corresponding item and subtracts the necessary amounts.\nConclusion Once this is all done, one simply needs to extend the Inventory class from the earlier tutorial. Connect some sort of button to a signal and trigger the following:\n Copy over the materials to the CraftPool. Call the CraftPool.craft_item() function. If anything is returned, set the items in the inventory to the return value.  I will release the full code samples for the crafting system in a public repository soon and post the link here.\nExercises To improve upon this system, here are some suggestions:\n Each recipe could have a “time” property which kicks off a wait timer in the inventory. Add an actual database to store the items and recipes in the code, preferably a NoSQL one like MongoDB.  ","wordCount":"1154","inLanguage":"en","datePublished":"2021-11-03T21:13:13-04:00","dateModified":"2021-11-03T21:13:13-04:00","author":{"@type":"Person","name":"Juniper"},"mainEntityOfPage":{"@type":"WebPage","@id":"http://juniper-dusk.github.io/posts/craftpunk-devlog/"},"publisher":{"@type":"Organization","name":"juniper dusk","logo":{"@type":"ImageObject","url":"http://juniper-dusk.github.io/favicon.ico"}}}</script>
+</head>
+<body id=top>
+<script>localStorage.getItem("pref-theme")==="dark"?document.body.classList.add('dark'):localStorage.getItem("pref-theme")==="light"?document.body.classList.remove('dark'):window.matchMedia('(prefers-color-scheme: dark)').matches&&document.body.classList.add('dark')</script>
+<header class=header>
+<nav class=nav>
+<div class=logo>
+<a href=http://juniper-dusk.github.io/ accesskey=h title="juniper dusk (Alt + H)">juniper dusk</a>
+<span class=logo-switches>
+<button id=theme-toggle accesskey=t title="(Alt + T)"><svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg><svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+</button>
+</span>
+</div>
+<ul id=menu>
+<li>
+<a href=http://juniper-dusk.github.io/about title=About>
+<span>About</span>
+</a>
+</li>
+<li>
+<a href=http://juniper-dusk.github.io/gallery title=Gallery>
+<span>Gallery</span>
+</a>
+</li>
+<li>
+<a href=https://juniper-dusk.itch.io/ title=Games>
+<span>Games</span>
+</a>
+</li>
+</ul>
+</nav>
+</header>
+<main class=main>
+<article class=post-single>
+<header class=post-header>
+<div class=breadcrumbs><a href=http://juniper-dusk.github.io/>Home</a>&nbsp;»&nbsp;<a href=http://juniper-dusk.github.io/posts/>Posts</a></div>
+<h1 class=post-title>
+Making a modular crafting system in Godot
+</h1>
+<div class=post-description>
+Craftpunk devlog: extending Godot resources to create a modular crafting system.
+</div>
+<div class=post-meta><span title="2021-11-03 21:13:13 -0400 -0400">November 3, 2021</span>&nbsp;·&nbsp;6 min&nbsp;·&nbsp;Juniper
+</div>
+</header> <div class=toc>
+<details>
+<summary accesskey=c title="(Alt + C)">
+<span class=details>Table of Contents</span>
+</summary>
+<div class=inner><ul>
+<li>
+<a href=#godot-resources aria-label="Godot Resources">Godot Resources</a></li>
+<li>
+<a href=#crafting aria-label=Crafting>Crafting</a><ul>
+<li>
+<a href=#base-class aria-label="Base Class">Base Class</a></li>
+<li>
+<a href=#crafting-recipes aria-label="Crafting Recipes">Crafting Recipes</a></li>
+<li>
+<a href=#recipe-database aria-label="Recipe Database">Recipe Database</a></li></ul>
+</li>
+<li>
+<a href=#inventory aria-label=Inventory>Inventory</a><ul>
+<li>
+<a href=#craft-pool aria-label="Craft Pool">Craft Pool</a></li></ul>
+</li>
+<li>
+<a href=#conclusion aria-label=Conclusion>Conclusion</a><ul>
+<li>
+<a href=#exercises aria-label=Exercises>Exercises</a>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</details>
+</div>
+<div class=post-content><p><img loading=lazy src=/images/craftpunk-crafting-demo.gif alt="Crafting System Demo">
+</p>
+<h2 id=godot-resources>Godot Resources<a hidden class=anchor aria-hidden=true href=#godot-resources>#</a></h2>
+<p>Godot&rsquo;s <a href=https://docs.godotengine.org/en/stable/getting_started/step_by_step/resources.html>Resource</a> class is a serializable data container that can be extended. They are quite similar in usage to Unity&rsquo;s ScriptableObject class. The following are some use cases and strengths of using Resources in your game project.</p>
+<ul>
+<li>Resources expose properties to the editor. This allows game designers to create new objects of the new Resource type in the editor.</li>
+<li>Resources are serializable, so they can be easily saved and loaded from disk.</li>
+<li>Resources are more light-weight than Nodes, and help streamline the SceneTree.</li>
+</ul>
+<p>These all play a role in keeping the delineations of the various game systems well-defined.</p>
+<ul>
+<li>Pure data such as player stats are stored and manipulated in Resources.</li>
+<li>Nodes (e.g. actors, UI) can fetch data and perform abstract operations on the Resource.</li>
+</ul>
+<h2 id=crafting>Crafting<a hidden class=anchor aria-hidden=true href=#crafting>#</a></h2>
+<p>It is fairly trivial to apply Resources to an inventory system where items are static data objects: one inventory item maps to one base class that derives from Resource. For <a href=https://juniper-dusk.itch.io/craftpunk>Craftpunk</a>, I followed the <a href="https://www.youtube.com/watch?v=rdUgf6r7w2Q">Resource Based Inventory</a> tutorial by Heartbeast. I have yet to go back and refactor this system, but I will make a note of where improvements can be made.</p>
+<h3 id=base-class>Base Class<a hidden class=anchor aria-hidden=true href=#base-class>#</a></h3>
+<pre tabindex=0><code># craft_component.gd
+class_name CraftComponent
+extends Resource
+
+
+export(Texture) var thumbnail
+export(String) var name
+export(int) var amount = 1
+export(bool) var stackable = true
+
+
+func get_description() -&gt; String:
+    return &quot;Raw material&quot;
+</code></pre><p>From there, you can start to create whatever raw materials (e.g. iron ore, copper ore) by creating a new <code>CraftComponent</code> in the editor and filling out the properties.</p>
+<h3 id=crafting-recipes>Crafting Recipes<a hidden class=anchor aria-hidden=true href=#crafting-recipes>#</a></h3>
+<pre tabindex=0><code># craft_recipe.gd
+class_name CraftRecipe
+extends CraftComponent
+
+
+export(Array, Resource) var components
+var _initialized : bool
+
+
+func get_description() -&gt; String:
+    return &quot;Compound material&quot;
+
+
+static func get_material_amounts(list : Array) -&gt; Dictionary:
+    # Generate name/amount dictionary.
+    var result = {}
+    for material in list:
+        if not material.name in result:
+            result[material.name] = material.amount
+        else:
+            result[material.name] += material.amount
+
+    return result
+</code></pre><p>Overall, a recipe is fairly simple: it is a list of items. Because <code>CraftRecipe</code> inherits from the base item class, recipes can compose other recipes and be stored in the inventory.</p>
+<p>I opted for a simpler approach on the front-end, where the designer simply adds duplicate Resources to represent more of that object. I find the exported Dictionary interface to be a bit finicky compared to <a href=https://docs.godotengine.org/en/stable/getting_started/scripting/gdscript/gdscript_exports.html#exporting-arrays>exported Arrays</a>, because it lacks type hinting; hopefully this changes in a future update.</p>
+<p>This does have the drawback of some added complexity on the backend: we need to iterate over the list and generate a dictionary with unique items as keys, and amounts as values. <em>NOTE: Ideally, you would store this data in the CraftRecipe upon initialization, so that accessors do not need to know of this function.</em></p>
+<h3 id=recipe-database>Recipe Database<a hidden class=anchor aria-hidden=true href=#recipe-database>#</a></h3>
+<pre tabindex=0><code># recipe_database.gd
+class_name RecipeDatabase
+extends Resource
+
+
+export(Array, Resource) var recipe_list : Array
+var recipe_database : Dictionary
+
+
+func initialize() -&gt; void:
+    # Construct recipe database.
+    recipe_database = {}
+    for recipe in recipe_list:
+        recipe_database[recipe.name] = CraftRecipe.get_material_amounts(recipe.components)
+
+
+# Param: materials is a dictionary with component name/amount as key/value.
+func get_recipe(materials : Dictionary) -&gt; CraftComponent:
+    for recipe_name in recipe_database.keys():
+        var recipe_amounts = recipe_database[recipe_name]
+        if materials_match_recipe(recipe_amounts, materials):
+            return get_component_by_name(recipe_name)
+
+    return null
+
+
+func materials_match_recipe(recipe : Dictionary, materials : Dictionary) -&gt; bool:
+    # Don't attempt to read from an empty materials list.
+    if not materials.keys():
+        return false
+
+    for name in recipe.keys():
+        if not name in materials:
+            return false
+        elif materials[name] &lt; recipe[name]:
+            return false
+
+    for name in materials.keys():
+        if not name in recipe:
+            return false
+
+    return true
+
+
+func get_component_by_name(name : String) -&gt; CraftComponent:
+    for recipe in recipe_list:
+        if recipe.name == name:
+            return recipe
+    return null
+</code></pre><p>Once you create a number of recipes, you need to query a collection of them in order to match a &ldquo;pool&rdquo; of items to an existing recipe. In a larger-scale project, this could be a NoSQL database which would allow for storage of many items and allow for server-side replication. However, for time&rsquo;s sake I went with a relatively simple Dictionary wrapper.</p>
+<p>One benefit of storing the list in this way is that recipes can be &ldquo;learned&rdquo; by the player as the game progresses, and this can be serialized and saved to disk.</p>
+<p>The main complication here is that items need to be fetched by the unique <code>name</code> field, whereas in memory they are stored as Resources which do not have a extendable hash function. This means we lose the instant access from the hash table and have to iterate over the keys linearly like an Array. I kept it this way to eventually split it out into C++ and override the hash operator. <em>NOTE: You could store a separate name -> Resource mapping alongside the name -> materials mapping.</em></p>
+<h2 id=inventory>Inventory<a hidden class=anchor aria-hidden=true href=#inventory>#</a></h2>
+<h3 id=craft-pool>Craft Pool<a hidden class=anchor aria-hidden=true href=#craft-pool>#</a></h3>
+<pre tabindex=0><code># craft_pool.gd
+class_name CraftPool
+extends ItemPool
+
+export(Resource) var recipe_database
+
+func initialize():
+    recipe_database.initialize()
+
+func get_item() -&gt; CraftComponent:
+    # Tally up number of materials by name.
+    var material_amounts = CraftRecipe.get_material_amounts(materials)
+    # Verify with database if item can be crafted.
+    return recipe_database.get_recipe(material_amounts)
+
+# Sets materials to the leftover materials.
+func craft_item() -&gt; bool:
+    # Make sure we have an item to begin with.
+    var crafted_item = get_item()
+    if not crafted_item:
+        return false
+    crafted_item = crafted_item.duplicate()
+
+    var remaining_amounts = CraftRecipe.get_material_amounts(materials)
+    var count = 0
+    var item = crafted_item.duplicate()
+    var item_amounts = CraftRecipe.get_material_amounts(item.components)
+
+    # While we have an item, keep subtracting required resources.
+    while(item):
+        if subtract_amounts(remaining_amounts, item_amounts):
+            # Enough materials left, add one to count.
+            count += 1
+            item = recipe_database.get_recipe(remaining_amounts)
+        else:
+           item = null
+
+    # Reset materials to clear pool.
+    reset()
+
+    # Add leftover materials from crafting.
+    for name in remaining_amounts.keys():
+        var new_item = recipe_database.get_component_by_name(name).duplicate()
+        new_item.amount = remaining_amounts[name]
+        add_material(new_item)
+
+    # Add the count to the crafted item and append it to list.
+    if crafted_item.stackable:
+        crafted_item.amount = count
+        add_material(crafted_item)
+    else:
+        for _i in range(count):
+            add_material(crafted_item)
+
+    return true
+</code></pre><p>Now that we have our crafting system essentially complete, we just need a way to bridge the gap between our inventory and the crafting system. I chose to keep the two systems fairly encapsulated from each other and copy items to the <code>CraftPool</code> when the craft button is pressed. You could extend the actual <code>Inventory</code> resource from the HeartBeast tutorial to avoid copying, but that class is complex enough as is in my opinion.</p>
+<p>This class is essentially responsible for processing &ldquo;batches&rdquo; of recipes. It verifies the ingredients are present, crafts the corresponding item and subtracts the necessary amounts.</p>
+<h2 id=conclusion>Conclusion<a hidden class=anchor aria-hidden=true href=#conclusion>#</a></h2>
+<p>Once this is all done, one simply needs to extend the Inventory class from the earlier tutorial. Connect some sort of button to a signal and trigger the following:</p>
+<ul>
+<li>Copy over the materials to the <code>CraftPool</code>.</li>
+<li>Call the <code>CraftPool.craft_item()</code> function.</li>
+<li>If anything is returned, set the items in the inventory to the return value.</li>
+</ul>
+<p>I will release the full code samples for the crafting system in a public repository soon and post the link here.</p>
+<h3 id=exercises>Exercises<a hidden class=anchor aria-hidden=true href=#exercises>#</a></h3>
+<p>To improve upon this system, here are some suggestions:</p>
+<ul>
+<li>Each recipe could have a &ldquo;time&rdquo; property which kicks off a wait timer in the inventory.</li>
+<li>Add an actual database to store the items and recipes in the code, preferably a NoSQL one like MongoDB.</li>
+</ul>
+</div>
+<footer class=post-footer>
+<ul class=post-tags>
+<li><a href=http://juniper-dusk.github.io/tags/craftpunk/>Craftpunk</a></li>
+<li><a href=http://juniper-dusk.github.io/tags/devlog/>devlog</a></li>
+</ul>
+<nav class=paginav>
+<a class=next href=http://juniper-dusk.github.io/posts/laserpunk-devlog/>
+<span class=title>Next Page »</span>
+<br>
+<span>Creating Laserpunk</span>
+</a>
+</nav>
+</footer>
+</article>
+</main>
+<footer class=footer>
+<span>&copy; 2021 <a href=http://juniper-dusk.github.io/>juniper dusk</a></span>
+<span>
+Powered by
+<a href=https://gohugo.io/ rel="noopener noreferrer" target=_blank>Hugo</a> &
+        <a href=https://git.io/hugopapermod rel=noopener target=_blank>PaperMod</a>
+</span>
+</footer>
+<a href=#top aria-label="go to top" title="Go to Top (Alt + G)" class=top-link id=top-link accesskey=g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentcolor"><path d="M12 6H0l6-6z"/></svg>
+</a>
+<script>let menu=document.getElementById('menu');menu&&(menu.scrollLeft=localStorage.getItem("menu-scroll-position"),menu.onscroll=function(){localStorage.setItem("menu-scroll-position",menu.scrollLeft)}),document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener("click",function(b){b.preventDefault();var a=this.getAttribute("href").substr(1);window.matchMedia('(prefers-reduced-motion: reduce)').matches?document.querySelector(`[id='${decodeURIComponent(a)}']`).scrollIntoView():document.querySelector(`[id='${decodeURIComponent(a)}']`).scrollIntoView({behavior:"smooth"}),a==="top"?history.replaceState(null,null," "):history.pushState(null,null,`#${a}`)})})</script>
+<script>var mybutton=document.getElementById("top-link");window.onscroll=function(){document.body.scrollTop>800||document.documentElement.scrollTop>800?(mybutton.style.visibility="visible",mybutton.style.opacity="1"):(mybutton.style.visibility="hidden",mybutton.style.opacity="0")}</script>
+<script>document.getElementById("theme-toggle").addEventListener("click",()=>{document.body.className.includes("dark")?(document.body.classList.remove('dark'),localStorage.setItem("pref-theme",'light')):(document.body.classList.add('dark'),localStorage.setItem("pref-theme",'dark'))})</script>
+<script>document.querySelectorAll('pre > code').forEach(b=>{const c=b.parentNode.parentNode,a=document.createElement('button');a.classList.add('copy-code'),a.innerText='copy';function d(){a.innerText='copied!',setTimeout(()=>{a.innerText='copy'},2e3)}a.addEventListener('click',e=>{if('clipboard'in navigator){navigator.clipboard.writeText(b.textContent),d();return}const a=document.createRange();a.selectNodeContents(b);const c=window.getSelection();c.removeAllRanges(),c.addRange(a);try{document.execCommand('copy'),d()}catch(a){}c.removeRange(a)}),c.classList.contains("highlight")?c.appendChild(a):c.parentNode.firstChild==c||(b.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName=="TABLE"?b.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(a):b.parentNode.appendChild(a))})</script>
+</body>
+</html>
