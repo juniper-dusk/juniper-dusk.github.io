@@ -1,0 +1,63 @@
+baseURL: "http://juniper-dusk.github.io/"
+languageCode : "en-us"
+title: "juniper dusk"
+paginate: 5
+theme: PaperMod
+
+enableInlineShortcodes: true
+enableRobotsTXT: true
+buildDrafts: false
+buildFuture: false
+buildExpired: false
+enableEmoji: true
+
+languages:
+    en:
+        languageName: "English"
+        weight: 1
+        menu:
+            main:
+                - name: About
+                  url: about
+                  weight: 1
+                - name: Gallery
+                  url: gallery
+                  weight: 2
+                - name: Games
+                  url: "https://juniper-dusk.itch.io/"
+                  weight: 3
+
+
+params:
+    #env: production # to enable google analytics, opengraph, twitter-cards and schema.
+    description: "C++ software engineer, game developer, artist, musician."
+    author: Juniper
+    # author: ["Me", "You"] # multiple authors
+
+    defaultTheme: auto
+    # disableThemeToggle: true
+    ShowShareButtons: false
+    ShowReadingTime: true
+    disableSpecial1stPost: true
+    displayFullLangName: true
+    ShowPostNavLinks: true
+    ShowBreadCrumbs: true
+    ShowCodeCopyButtons: true
+    ShowToc: true
+    # comments: false
+    #images: [ "images/banner.png" ]
+
+    profileMode:
+        enabled: false
+        title: juniper dusk
+        imageUrl: "images/porco-rosso.png"
+        imageTitle: my image
+        # imageWidth: 120
+        # imageHeight: 120
+        buttons:
+            - name: About
+              url: about
+            - name: Gallery
+              url: gallery
+            - name: Games
+              url: "https://juniper-dusk.itch.io/"

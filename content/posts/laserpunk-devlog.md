@@ -1,13 +1,13 @@
 ---
-title: "Laserpunk Devlog"
+title: "Creating Laserpunk"
 date: 2021-07-21T15:35:08-04:00
 draft: false
 summary: "A write-up on my experience solo developing an action platformer in two weeks."
 description: "A write-up on my experience solo developing an action platformer in two weeks."
 show_reading_time: true
-toc: true
 featured_image: '/images/laserpunk-logo.png'
 category: "devlog"
+tags: [ "Laserpunk", "devlog" ]
 ---
 
 ![Game Demo GIF](/images/laserpunk-demo.gif)
